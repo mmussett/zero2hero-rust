@@ -135,15 +135,4 @@ export default defineConfig({
     },
     lineNumbers: true,
   },
-
-  // Rust generics like Box<T>, Vec<T>, Option<T> appear as unmatched HTML
-  // tags in link text and plain prose. Telling Vue to treat all unknown
-  // tags as custom elements suppresses those compiler errors globally.
-  vue: {
-    template: {
-      compilerOptions: {
-        isCustomElement: () => true,
-      },
-    },
-  },
 })
