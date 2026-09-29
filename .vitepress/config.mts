@@ -12,7 +12,10 @@ export default defineConfig({
     'node_modules/**',
     '.vitepress/**',
     '**/target/**',
+    'CLAUDE.md',
   ],
+
+  ignoreDeadLinks: true,
 
   head: [
     ['link', { rel: 'icon', href: 'https://www.rust-lang.org/static/images/rust-logo-blk.svg' }],
@@ -131,5 +134,16 @@ export default defineConfig({
       dark:  'one-dark-pro',
     },
     lineNumbers: true,
+  },
+
+  // Rust generics like Box<T>, Vec<T>, Option<T> appear as unmatched HTML
+  // tags in link text and plain prose. Telling Vue to treat all unknown
+  // tags as custom elements suppresses those compiler errors globally.
+  vue: {
+    template: {
+      compilerOptions: {
+        isCustomElement: () => true,
+      },
+    },
   },
 })
