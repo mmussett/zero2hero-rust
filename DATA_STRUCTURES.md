@@ -302,7 +302,7 @@ enum List<T> {
 - Prepend-heavy workloads where O(1) head insertion matters
 - Functional-style list processing (fold, map, recursive algorithms)
 - When ownership semantics map naturally to a list (each node owns the next)
-- Teaching recursion and Box<T>
+- Teaching recursion and `Box<T>`
 
 > **Note:** `std::collections::LinkedList` exists in the standard library but is rarely the right choice in practice. `Vec<T>` is almost always faster due to cache locality and avoids the per-node heap allocation overhead.
 
