@@ -2,11 +2,10 @@
 /target/
 **/target/
 
-# VitePress build output
-.vitepress/dist/
-.vitepress/cache/
+# mdBook build output
+book/
 
-# Node
+# Node (kept in case npm is used locally)
 node_modules/
 
 # Editor
