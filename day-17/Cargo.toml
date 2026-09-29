@@ -1,0 +1,4 @@
+[package]
+name = "day-17"
+version.workspace = true
+edition.workspace = true

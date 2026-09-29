@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Day 21 — Rust Wasm Image Filters</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 700px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        h1 { color: #f97316; }
+        canvas {
+            display: block;
+            border: 2px solid #f97316;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            background: #f97316;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #ea6b0f; }
+        #status {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #86efac;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rust + Wasm Image Filters</h1>
+    <p>Click a button to apply a Rust-powered image filter to the canvas.</p>
+
+    <canvas id="canvas" width="512" height="256"></canvas>
+
+    <div class="controls">
+        <button id="btn-original">Original</button>
+        <button id="btn-grayscale">Grayscale</button>
+        <button id="btn-invert">Invert</button>
+        <button id="btn-brighten">Brighten (1.5x)</button>
+    </div>
+
+    <p id="status">Loading Wasm...</p>
+
+    <script type="module">
+        import init, { grayscale, invert, brighten } from './pkg/day_21.js';
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+
+        // Draw a colourful test image using rectangles and a gradient
+        function drawTestImage() {
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Background gradient
+            const grad = ctx.createLinearGradient(0, 0, w, h);
+            grad.addColorStop(0, '#1e3a8a');
+            grad.addColorStop(1, '#7c3aed');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Coloured rectangles
+            const colours = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'];
+            const rectW = Math.floor(w / colours.length);
+            colours.forEach((c, i) => {
+                ctx.fillStyle = c;
+                ctx.fillRect(i * rectW, 60, rectW - 4, h - 120);
+            });
+
+            // White text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText('Rust Wasm Image Processing', w / 2, 36);
+        }
+
+        // Store original pixel data so we can reset
+        let originalPixels = null;
+
+        function captureOriginal() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            originalPixels = new Uint8ClampedArray(imageData.data);
+        }
+
+        function applyFilter(filterFn, ...args) {
+            // Restore original before applying filter
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            if (originalPixels) {
+                imageData.data.set(originalPixels);
+            }
+
+            const pixels = Array.from(imageData.data);
+            const result = filterFn(pixels, ...args);
+            imageData.data.set(result);
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        async function main() {
+            try {
+                await init();
+                status.textContent = 'Wasm loaded. Functions: grayscale, invert, brighten';
+                console.log('Wasm module loaded. Functions: grayscale, invert, brighten');
+
+                drawTestImage();
+                captureOriginal();
+
+                document.getElementById('btn-original').addEventListener('click', () => {
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    imageData.data.set(originalPixels);
+                    ctx.putImageData(imageData, 0, 0);
+                    status.textContent = 'Showing: Original';
+                });
+
+                document.getElementById('btn-grayscale').addEventListener('click', () => {
+                    applyFilter(grayscale);
+                    status.textContent = 'Showing: Grayscale (Rust)';
+                });
+
+                document.getElementById('btn-invert').addEventListener('click', () => {
+                    applyFilter(invert);
+                    status.textContent = 'Showing: Invert (Rust)';
+                });
+
+                document.getElementById('btn-brighten').addEventListener('click', () => {
+                    applyFilter(brighten, 1.5);
+                    status.textContent = 'Showing: Brighten 1.5x (Rust)';
+                });
+
+            } catch (err) {
+                status.textContent = 'Error loading Wasm: ' + err.message;
+                console.error(err);
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>
