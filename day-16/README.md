@@ -17,7 +17,7 @@ By the end of today you will be able to:
 
 ### 1. `Box<T>` — Heap Allocation and Deref Coercion
 
-> **Docs:** [Box<T>](https://doc.rust-lang.org/std/boxed/struct.Box.html) · [Book — Box<T>](https://doc.rust-lang.org/book/ch15-01-box.html) · [Deref trait](https://doc.rust-lang.org/std/ops/trait.Deref.html) · [Book — Deref](https://doc.rust-lang.org/book/ch15-02-deref.html)
+> **Docs:** [Box&lt;T&gt;](https://doc.rust-lang.org/std/boxed/struct.Box.html) · [Book — Box&lt;T&gt;](https://doc.rust-lang.org/book/ch15-01-box.html) · [Deref trait](https://doc.rust-lang.org/std/ops/trait.Deref.html) · [Book — Deref](https://doc.rust-lang.org/book/ch15-02-deref.html)
 
 `Box<T>` is the simplest smart pointer: it allocates `T` on the heap and gives you a stack-resident pointer to it. When the `Box` goes out of scope, it drops both itself and the heap allocation. There is no reference counting or locking — just a single owner.
 
@@ -76,7 +76,7 @@ Sum: 500500
 
 ### 2. Recursive Types with `Box`
 
-> **Docs:** [Box<T>](https://doc.rust-lang.org/std/boxed/struct.Box.html) · [Book — Box<T>](https://doc.rust-lang.org/book/ch15-01-box.html)
+> **Docs:** [Box&lt;T&gt;](https://doc.rust-lang.org/std/boxed/struct.Box.html) · [Book — Box&lt;T&gt;](https://doc.rust-lang.org/book/ch15-01-box.html)
 
 A recursive type is one whose definition includes itself: a tree node that contains child nodes of the same type, a linked list whose `Cons` variant holds another list. The compiler must know the size of every type at compile time, and a naively recursive type has infinite size — so Rust rejects it.
 
@@ -145,7 +145,7 @@ Length: 5
 
 ### 3. `Rc<T>` — Shared Ownership
 
-> **Docs:** [Rc<T>](https://doc.rust-lang.org/std/rc/struct.Rc.html) · [Book — Rc<T>](https://doc.rust-lang.org/book/ch15-04-rc.html)
+> **Docs:** [Rc&lt;T&gt;](https://doc.rust-lang.org/std/rc/struct.Rc.html) · [Book — Rc&lt;T&gt;](https://doc.rust-lang.org/book/ch15-04-rc.html)
 
 Rust's ownership model normally allows exactly one owner per value. `Rc<T>` (Reference Counted) relaxes this: it lets multiple variables be *co-owners* of the same heap allocation. The allocation is freed when the last `Rc` pointing to it is dropped.
 
@@ -209,7 +209,7 @@ Reference count: 3
 
 ### 4. `RefCell<T>` — Interior Mutability
 
-> **Docs:** [RefCell<T>](https://doc.rust-lang.org/std/cell/struct.RefCell.html) · [Book — RefCell](https://doc.rust-lang.org/book/ch15-05-interior-mutability.html) · [Cell<T>](https://doc.rust-lang.org/std/cell/struct.Cell.html)
+> **Docs:** [RefCell&lt;T&gt;](https://doc.rust-lang.org/std/cell/struct.RefCell.html) · [Book — RefCell](https://doc.rust-lang.org/book/ch15-05-interior-mutability.html) · [Cell&lt;T&gt;](https://doc.rust-lang.org/std/cell/struct.Cell.html)
 
 Rust's borrow checker enforces at compile time that you have either one mutable reference or any number of immutable references. Sometimes this is too restrictive: you know the borrows are valid, but the compiler cannot see it (e.g., a single-threaded callback that needs to mutate shared state).
 
@@ -282,7 +282,7 @@ impl MockLogger {
 
 ### 5. `Rc<RefCell<T>>` — Shared Mutable State
 
-> **Docs:** [Rc<T>](https://doc.rust-lang.org/std/rc/struct.Rc.html) · [RefCell<T>](https://doc.rust-lang.org/std/cell/struct.RefCell.html) · [Weak<T>](https://doc.rust-lang.org/std/rc/struct.Weak.html)
+> **Docs:** [Rc&lt;T&gt;](https://doc.rust-lang.org/std/rc/struct.Rc.html) · [RefCell&lt;T&gt;](https://doc.rust-lang.org/std/cell/struct.RefCell.html) · [Weak&lt;T&gt;](https://doc.rust-lang.org/std/rc/struct.Weak.html)
 
 `Rc<T>` gives shared ownership; `RefCell<T>` gives interior mutability. Combined as `Rc<RefCell<T>>`, you get multiple owners who can all mutate the shared value — the standard pattern for shared mutable state in single-threaded Rust.
 

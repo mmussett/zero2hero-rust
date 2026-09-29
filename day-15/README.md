@@ -94,7 +94,7 @@ WOOF!
 
 ### 2. `Box<dyn Trait>` and Heterogeneous Collections
 
-> **Docs:** [Trait objects](https://doc.rust-lang.org/book/ch17-02-trait-objects.html) · [Box<T>](https://doc.rust-lang.org/std/boxed/struct.Box.html) · [Reference — Trait objects](https://doc.rust-lang.org/reference/types/trait-object.html)
+> **Docs:** [Trait objects](https://doc.rust-lang.org/book/ch17-02-trait-objects.html) · [Box&lt;T&gt;](https://doc.rust-lang.org/std/boxed/struct.Box.html) · [Reference — Trait objects](https://doc.rust-lang.org/reference/types/trait-object.html)
 
 The killer use-case for `dyn Trait` is a collection of values that share a trait but have different concrete types. A `Vec<Box<dyn Trait>>` can hold a `Cat`, a `Dog`, and a `Penguin` simultaneously — something `Vec<T>` cannot express with a single `T`.
 
@@ -321,7 +321,7 @@ Object-safe version compiles successfully.
 
 ### 5. Returning `Box<dyn Trait>` from Functions
 
-> **Docs:** [Trait objects](https://doc.rust-lang.org/book/ch17-02-trait-objects.html) · [Box<T>](https://doc.rust-lang.org/std/boxed/struct.Box.html)
+> **Docs:** [Trait objects](https://doc.rust-lang.org/book/ch17-02-trait-objects.html) · [Box&lt;T&gt;](https://doc.rust-lang.org/std/boxed/struct.Box.html)
 
 The factory pattern is one of the clearest wins for `dyn Trait`. The caller does not need to know or care which concrete type was created — it just uses the trait interface. This lets you add new implementations without changing any call sites.
 
