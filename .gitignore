@@ -2,8 +2,12 @@
 /target/
 **/target/
 
-# mdBook build output
-/book/
+# VitePress build output
+.vitepress/dist/
+.vitepress/cache/
+
+# Node
+node_modules/
 
 # Editor
 .vscode/

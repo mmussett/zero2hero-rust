@@ -16,19 +16,24 @@ concurrency:
 
 jobs:
   build:
-    name: Build mdBook
+    name: Build VitePress site
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for lastUpdated timestamps
 
-      - name: Install mdBook
-        run: |
-          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.40/mdbook-v0.4.40-x86_64-unknown-linux-gnu.tar.gz \
-            | tar -xz --directory /usr/local/bin
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-      - name: Build book
-        run: mdbook build
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run docs:build
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -36,7 +41,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: book
+          path: .vitepress/dist
 
   deploy:
     name: Deploy to GitHub Pages
