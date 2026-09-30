@@ -336,6 +336,10 @@ async fn handle_connection(stream: TcpStream, store: Arc<Mutex<KvStore>>) -> Res
 /// The underlying `KvStore` operations (especially `get` which seeks a file) are
 /// blocking.  In a production system these would be wrapped in
 /// `tokio::task::block_in_place`; for this learning project we accept the tradeoff.
+///
+/// # Lifetime note
+/// All format strings are bound to named `let` bindings before calling `.as_bytes()`
+/// so that the `&[u8]` reference is unambiguously valid across the `.await` point.
 async fn dispatch(
     cmd: &str,
     store: &Arc<Mutex<KvStore>>,
@@ -343,8 +347,10 @@ async fn dispatch(
 ) -> Result<bool> {
     // Split the first whitespace-delimited token as the command verb.
     let (verb, rest) = cmd.split_once(' ').unwrap_or((cmd, ""));
+    // Bind to a named variable so the String outlives the match block unambiguously.
+    let verb_upper = verb.to_uppercase();
 
-    match verb.to_uppercase().as_str() {
+    match verb_upper.as_str() {
         "SET" => {
             // SET <key> <value>  — value may contain spaces
             match rest.split_once(' ') {
@@ -353,10 +359,17 @@ async fn dispatch(
                         let mut guard = store.lock().await;
                         guard.set(key.to_string(), value.to_string())
                     };
-                    match res {
-                        Ok(()) => writer.write_all(b"OK\n").await?,
-                        Err(e) => writer.write_all(format!("ERR {}\n", e).as_bytes()).await?,
-                    }
+                    // Bind response to a variable so &[u8] is valid across .await.
+                    let msg: &[u8] = match res {
+                        Ok(()) => b"OK\n",
+                        Err(ref e) => {
+                            // Can't use format! directly across await; use a local binding.
+                            let s = format!("ERR {}\n", e);
+                            writer.write_all(s.as_bytes()).await?;
+                            return Ok(false);
+                        }
+                    };
+                    writer.write_all(msg).await?;
                 }
                 None => writer.write_all(b"ERR SET requires key and value\n").await?,
             }
@@ -369,11 +382,13 @@ async fn dispatch(
                 let guard = store.lock().await;
                 guard.get(key)
             };
-            match res {
-                Ok(Some(v)) => writer.write_all(format!("VALUE {}\n", v).as_bytes()).await?,
-                Ok(None) => writer.write_all(b"NIL\n").await?,
-                Err(e) => writer.write_all(format!("ERR {}\n", e).as_bytes()).await?,
-            }
+            // Build the full response as an owned String to avoid temporary-borrow issues.
+            let response = match res {
+                Ok(Some(v)) => format!("VALUE {}\n", v),
+                Ok(None)    => "NIL\n".to_string(),
+                Err(e)      => format!("ERR {}\n", e),
+            };
+            writer.write_all(response.as_bytes()).await?;
             Ok(false)
         }
 
@@ -383,11 +398,12 @@ async fn dispatch(
                 let mut guard = store.lock().await;
                 guard.delete(key)
             };
-            match res {
-                Ok(true) => writer.write_all(b"OK\n").await?,
-                Ok(false) => writer.write_all(b"NIL\n").await?,
-                Err(e) => writer.write_all(format!("ERR {}\n", e).as_bytes()).await?,
-            }
+            let response = match res {
+                Ok(true)  => "OK\n".to_string(),
+                Ok(false) => "NIL\n".to_string(),
+                Err(e)    => format!("ERR {}\n", e),
+            };
+            writer.write_all(response.as_bytes()).await?;
             Ok(false)
         }
 
@@ -397,8 +413,10 @@ async fn dispatch(
                 let guard = store.lock().await;
                 guard.list(prefix)
             };
+            // Write each key on its own line; bind each line to avoid temp-borrow issues.
             for k in &keys {
-                writer.write_all(format!("{}\n", k).as_bytes()).await?;
+                let line = format!("{}\n", k);
+                writer.write_all(line.as_bytes()).await?;
             }
             writer.write_all(b"END\n").await?;
             Ok(false)
@@ -409,10 +427,11 @@ async fn dispatch(
                 let mut guard = store.lock().await;
                 guard.compact()
             };
-            match res {
-                Ok(()) => writer.write_all(b"OK\n").await?,
-                Err(e) => writer.write_all(format!("ERR {}\n", e).as_bytes()).await?,
-            }
+            let response = match res {
+                Ok(())  => "OK\n".to_string(),
+                Err(e)  => format!("ERR {}\n", e),
+            };
+            writer.write_all(response.as_bytes()).await?;
             Ok(false)
         }
 
@@ -422,7 +441,8 @@ async fn dispatch(
         }
 
         _ => {
-            writer.write_all(format!("ERR unknown command '{}'\n", verb).as_bytes()).await?;
+            let response = format!("ERR unknown command '{}'\n", verb);
+            writer.write_all(response.as_bytes()).await?;
             Ok(false)
         }
     }

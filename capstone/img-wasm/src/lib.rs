@@ -32,11 +32,18 @@ fn decode(bytes: &[u8]) -> Result<DynamicImage, JsError> {
 ///
 /// Uses `DynamicImage::write_to` with an in-memory `Cursor` so no filesystem
 /// access is needed — safe to call from a WASM context.
+///
+/// The `Cursor` is scoped to an inner block so the mutable borrow of `buf` is
+/// released before we move `buf` into the return value.
 fn encode(img: DynamicImage) -> Result<Vec<u8>, JsError> {
     let mut buf: Vec<u8> = Vec::new();
-    let mut cursor = Cursor::new(&mut buf);
-    img.write_to(&mut cursor, ImageFormat::Png)
-        .map_err(|e| JsError::new(&e.to_string()))?;
+    {
+        // Inner scope so `cursor` (which mutably borrows `buf`) is dropped
+        // before we move `buf` into `Ok(buf)`.
+        let mut cursor = Cursor::new(&mut buf);
+        img.write_to(&mut cursor, ImageFormat::Png)
+            .map_err(|e| JsError::new(&e.to_string()))?;
+    }
     Ok(buf)
 }
 

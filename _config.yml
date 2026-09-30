@@ -1,0 +1,34 @@
+title: "Zero to Hero: Rust"
+description: "A self-paced, project-based 30-day curriculum — from absolute beginner to production-minded Rust developer."
+
+theme: jekyll-theme-cayman
+
+# Use GitHub-Flavored Markdown so pipe tables, fenced code blocks,
+# strikethrough, and autolinks render the same as on github.com.
+markdown: kramdown
+kramdown:
+  input: GFM
+
+# Extension-less URLs (e.g. /day-01/README/ instead of /day-01/README.html)
+permalink: pretty
+
+plugins:
+  - jekyll-relative-links
+
+# Rewrite relative .md links so cross-day navigation works on the
+# published Pages site without modifying the source files.
+relative_links:
+  enabled:     true
+  collections: true
+
+# Exclude non-content files from the built site.
+exclude:
+  - CLAUDE.md
+  - Cargo.toml
+  - Cargo.lock
+  - "day-*/Cargo.toml"
+  - "capstone/*/Cargo.toml"
+  - "capstone/*/Cargo.lock"
+  - ".gitignore"
+  - "vendor/"
+  - "node_modules/"

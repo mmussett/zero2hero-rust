@@ -17,7 +17,6 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 use clap::{Parser, Subcommand};
 use pulldown_cmark::{html as md_html, Options, Parser as CmarkParser};
-use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
 use std::io;
@@ -673,7 +672,7 @@ mod tests {
     fn test_front_matter_draft_true() {
         let src = "---\ntitle: Draft Post\ndraft: true\n---\n\nContent";
         let (fm_opt, _) = parse_front_matter(src);
-        let fm = fm_opt.unwrap();
+        let fm = fm_opt.expect("should have front matter");
         assert!(fm.draft);
         assert_eq!(fm.title, "Draft Post");
         // Tags should default to empty when absent
