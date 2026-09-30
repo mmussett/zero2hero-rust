@@ -31,6 +31,16 @@ members = [
     "day-28",
     "day-29",
     "day-30",
+    # ── Capstone solutions ──────────────────────────────────
+    "capstone/rgrep",
+    "capstone/passgen",
+    "capstone/md-render",
+    "capstone/url-shortener",
+    "capstone/finance-api",
+    "capstone/chat-server",
+    "capstone/ssg",
+    "capstone/kvdb",
+    "capstone/img-wasm",
 ]
 
 [workspace.package]

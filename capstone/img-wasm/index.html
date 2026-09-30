@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<!--
+  img-wasm Image Editor
+  =====================
+  Build with: wasm-pack build --target web
+  Serve with any HTTP server, e.g.:
+    python -m http.server 8080
+    npx serve .
+  Then open: http://localhost:8080
+
+  The WASM module must be built before opening this page (./pkg/ directory).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>img-wasm Image Editor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #1a1a2e;
+      --surface:   #16213e;
+      --panel:     #0f3460;
+      --accent:    #e94560;
+      --accent2:   #533483;
+      --text:      #eaeaea;
+      --muted:     #8a8a9a;
+      --border:    #2a2a4a;
+      --success:   #4caf50;
+      --radius:    8px;
+      --shadow:    0 4px 16px rgba(0,0,0,.4);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.4rem; }
+    header p { color: var(--muted); font-size: 0.85rem; }
+
+    #app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 0;
+      flex: 1;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.25rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── File input ── */
+    #file-drop {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    #file-drop:hover, #file-drop.drag-over { border-color: var(--accent); }
+    #file-drop input { display: none; }
+    #file-drop p { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+
+    /* ── Buttons ── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    button:hover:not(:disabled) { opacity: 0.85; }
+    button:active:not(:disabled) { transform: scale(0.97); }
+    button:disabled { opacity: 0.35; cursor: default; }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .btn-op {
+      background: var(--panel);
+      color: var(--text);
+    }
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: var(--accent2);
+      color: #fff;
+    }
+    .btn-neutral {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    /* ── Sliders ── */
+    .slider-group { display: flex; flex-direction: column; gap: 0.85rem; }
+    .slider-row { display: flex; flex-direction: column; gap: 0.3rem; }
+    .slider-header { display: flex; justify-content: space-between; font-size: 0.82rem; }
+    .slider-value { color: var(--accent); font-weight: 600; min-width: 3rem; text-align: right; }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* ── History controls ── */
+    .history-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .history-row button { flex: 1; }
+
+    #history-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ── Download ── */
+    #btn-download {
+      width: 100%;
+      background: var(--success);
+      color: #fff;
+      padding: 0.65rem;
+      font-size: 0.9rem;
+    }
+
+    /* ── Status bar ── */
+    #status {
+      font-size: 0.78rem;
+      color: var(--muted);
+      min-height: 1.2em;
+      text-align: center;
+    }
+    #status.error { color: var(--accent); }
+
+    /* ── Preview area ── */
+    #preview-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      padding: 2rem;
+      overflow: auto;
+    }
+
+    #preview-area img {
+      max-width: 100%;
+      max-height: calc(100vh - 120px);
+      object-fit: contain;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: none;
+    }
+
+    #empty-state {
+      text-align: center;
+      color: var(--muted);
+    }
+    #empty-state p { margin-top: 0.5rem; font-size: 0.9rem; }
+
+    /* ── Loading overlay ── */
+    #loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      z-index: 100;
+    }
+    #loading.visible { display: flex; }
+    .spinner {
+      width: 2rem; height: 2rem;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.75rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) {
+      #app { grid-template-columns: 1fr; }
+      #sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>img-wasm Image Editor</h1>
+    <p>Powered by Rust + WebAssembly &mdash; all processing runs locally in your browser</p>
+  </div>
+</header>
+
+<div id="app">
+  <!-- ── Sidebar ── -->
+  <aside id="sidebar">
+
+    <!-- File Load -->
+    <section>
+      <p class="section-label">Open Image</p>
+      <div id="file-drop" role="button" tabindex="0" aria-label="Open image file">
+        <label for="file-input" style="cursor:pointer;font-size:0.9rem;">
+          Click or drop a PNG / JPEG
+        </label>
+        <input type="file" id="file-input" accept="image/png,image/jpeg">
+        <p>Max ~10 MB recommended</p>
+      </div>
+    </section>
+
+    <!-- Instant operations -->
+    <section>
+      <p class="section-label">Transform</p>
+      <div class="btn-grid">
+        <button class="btn-op" id="btn-grayscale">Greyscale</button>
+        <button class="btn-op" id="btn-invert">Invert</button>
+        <button class="btn-op" id="btn-fliph">Flip H</button>
+        <button class="btn-op" id="btn-flipv">Flip V</button>
+        <button class="btn-op" id="btn-rotate">Rotate 90°</button>
+      </div>
+    </section>
+
+    <!-- Sliders -->
+    <section>
+      <p class="section-label">Adjustments</p>
+      <div class="slider-group">
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="sl-brightness">Brightness</label>
+            <span class="slider-value" id="val-brightness">0</span>
+          </div>
+          <input type="range" id="sl-brightness" min="-255" max="255" value="0">
+        </div>
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="sl-blur">Blur (sigma)</label>
+            <span class="slider-value" id="val-blur">0.0</span>
+          </div>
+          <input type="range" id="sl-blur" min="0" max="50" value="0" step="1">
+        </div>
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="sl-contrast">Contrast</label>
+            <span class="slider-value" id="val-contrast">0.0</span>
+          </div>
+          <input type="range" id="sl-contrast" min="-100" max="100" value="0" step="1">
+        </div>
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="sl-sharpen">Sharpen</label>
+            <span class="slider-value" id="val-sharpen">0.0</span>
+          </div>
+          <input type="range" id="sl-sharpen" min="0" max="40" value="0" step="1">
+        </div>
+      </div>
+      <button class="btn-accent" id="btn-apply" style="width:100%;margin-top:0.75rem;">Apply Adjustments</button>
+    </section>
+
+    <!-- Undo / Redo -->
+    <section>
+      <p class="section-label">History <span style="font-weight:normal">(max 20 steps)</span></p>
+      <div class="history-row">
+        <button class="btn-neutral" id="btn-undo" disabled>↩ Undo</button>
+        <button class="btn-neutral" id="btn-redo" disabled>Redo ↪</button>
+      </div>
+      <p id="history-count"></p>
+    </section>
+
+    <!-- Download -->
+    <section>
+      <button id="btn-download" disabled>⬇ Download PNG</button>
+    </section>
+
+    <!-- Status -->
+    <div id="status">Loading WASM module…</div>
+
+  </aside>
+
+  <!-- ── Preview ── -->
+  <main id="preview-area" aria-live="polite">
+    <div id="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="m21 15-5-5L5 21"/>
+      </svg>
+      <p>Open an image to get started</p>
+    </div>
+    <img id="preview" alt="Processed image preview">
+  </main>
+</div>
+
+<!-- Loading overlay shown during long operations -->
+<div id="loading" role="status">
+  <div class="spinner"></div>
+  <span>Processing…</span>
+</div>
+
+<script type="module">
+  // ── Import the WASM-generated JS bindings ──────────────────────────────────
+  // The bindings are generated by `wasm-pack build --target web`.
+  import init, {
+    grayscale,
+    brightness,
+    blur,
+    flip_horizontal,
+    flip_vertical,
+    rotate90,
+    invert,
+    sharpen,
+    contrast,
+    dimensions,
+  } from './pkg/img_wasm.js';
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let currentBytes = null;   // Uint8Array of the currently displayed image
+  let undoStack    = [];     // Array<Uint8Array> — past states
+  let redoStack    = [];     // Array<Uint8Array> — redo states (cleared on new op)
+  const MAX_HISTORY = 20;
+
+  // ── DOM references ─────────────────────────────────────────────────────────
+  const fileInput    = document.getElementById('file-input');
+  const fileDrop     = document.getElementById('file-drop');
+  const preview      = document.getElementById('preview');
+  const emptyState   = document.getElementById('empty-state');
+  const status       = document.getElementById('status');
+  const loading      = document.getElementById('loading');
+  const btnUndo      = document.getElementById('btn-undo');
+  const btnRedo      = document.getElementById('btn-redo');
+  const btnDownload  = document.getElementById('btn-download');
+  const historyCount = document.getElementById('history-count');
+
+  const sliders = {
+    brightness: { el: document.getElementById('sl-brightness'), val: document.getElementById('val-brightness'), scale: 1 },
+    blur:       { el: document.getElementById('sl-blur'),       val: document.getElementById('val-blur'),       scale: 0.1 },
+    contrast:   { el: document.getElementById('sl-contrast'),   val: document.getElementById('val-contrast'),   scale: 0.05 },
+    sharpen:    { el: document.getElementById('sl-sharpen'),    val: document.getElementById('val-sharpen'),    scale: 0.1 },
+  };
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  /** Show a status message; optionally mark it as an error. */
+  function setStatus(msg, isError = false) {
+    status.textContent = msg;
+    status.className = isError ? 'error' : '';
+  }
+
+  /** Display image bytes in the preview element. */
+  function displayImage(bytes) {
+    const blob = new Blob([bytes], { type: 'image/png' });
+    // Revoke the previous object URL to free memory
+    if (preview.src && preview.src.startsWith('blob:')) {
+      URL.revokeObjectURL(preview.src);
+    }
+    preview.src = URL.createObjectURL(blob);
+    preview.style.display = 'block';
+    emptyState.style.display = 'none';
+  }
+
+  /** Update undo/redo button states and the history counter. */
+  function syncHistory() {
+    btnUndo.disabled    = undoStack.length === 0;
+    btnRedo.disabled    = redoStack.length === 0;
+    btnDownload.disabled = currentBytes === null;
+    historyCount.textContent = undoStack.length > 0
+      ? `${undoStack.length} step${undoStack.length === 1 ? '' : 's'} available`
+      : '';
+  }
+
+  /**
+   * Apply a synchronous WASM operation to the current image.
+   *
+   * Pushes the current bytes onto the undo stack, applies `opFn`,
+   * updates the display, and clears the redo stack.
+   */
+  async function applyOp(opFn) {
+    if (!currentBytes) { setStatus('Open an image first.', true); return; }
+    loading.classList.add('visible');
+    try {
+      // Yield to the browser event loop so the loading overlay renders.
+      await new Promise(r => setTimeout(r, 0));
+      const result = opFn(currentBytes);
+      // Push old state to undo stack, capped at MAX_HISTORY
+      if (undoStack.length >= MAX_HISTORY) undoStack.shift();
+      undoStack.push(currentBytes);
+      redoStack = []; // New action invalidates the redo branch
+      currentBytes = result;
+      displayImage(currentBytes);
+      setStatus('Done.');
+    } catch (e) {
+      setStatus('Error: ' + (e.message ?? String(e)), true);
+    } finally {
+      loading.classList.remove('visible');
+      syncHistory();
+    }
+  }
+
+  // ── File loading ───────────────────────────────────────────────────────────
+
+  async function loadFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setStatus('Please open a PNG or JPEG file.', true);
+      return;
+    }
+    loading.classList.add('visible');
+    try {
+      const buf = await file.arrayBuffer();
+      currentBytes = new Uint8Array(buf);
+      // Reset history when a new file is loaded
+      undoStack = [];
+      redoStack = [];
+      displayImage(currentBytes);
+      // Show dimensions in status bar
+      try {
+        const [w, h] = dimensions(currentBytes);
+        setStatus(`Loaded: ${file.name} (${w} × ${h} px)`);
+      } catch {
+        setStatus(`Loaded: ${file.name}`);
+      }
+    } catch (e) {
+      setStatus('Failed to load image: ' + e.message, true);
+    } finally {
+      loading.classList.remove('visible');
+      syncHistory();
+    }
+  }
+
+  fileInput.addEventListener('change', () => loadFile(fileInput.files[0]));
+
+  // Drag-and-drop support on the drop zone
+  fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over'); });
+  fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
+  fileDrop.addEventListener('drop', e => {
+    e.preventDefault();
+    fileDrop.classList.remove('drag-over');
+    loadFile(e.dataTransfer.files[0]);
+  });
+  // Keyboard accessibility: Enter/Space triggers file dialog
+  fileDrop.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+
+  // ── Slider display updates ─────────────────────────────────────────────────
+
+  for (const [name, s] of Object.entries(sliders)) {
+    s.el.addEventListener('input', () => {
+      const v = s.el.value * s.scale;
+      s.val.textContent = Number.isInteger(v) ? v.toFixed(0) : v.toFixed(1);
+    });
+  }
+
+  // ── Instant operation buttons ──────────────────────────────────────────────
+
+  document.getElementById('btn-grayscale').addEventListener('click', () =>
+    applyOp(b => grayscale(b)));
+
+  document.getElementById('btn-invert').addEventListener('click', () =>
+    applyOp(b => invert(b)));
+
+  document.getElementById('btn-fliph').addEventListener('click', () =>
+    applyOp(b => flip_horizontal(b)));
+
+  document.getElementById('btn-flipv').addEventListener('click', () =>
+    applyOp(b => flip_vertical(b)));
+
+  document.getElementById('btn-rotate').addEventListener('click', () =>
+    applyOp(b => rotate90(b)));
+
+  // ── Apply adjustments button ───────────────────────────────────────────────
+
+  document.getElementById('btn-apply').addEventListener('click', () => {
+    const bDelta    = parseInt(sliders.brightness.el.value, 10);
+    const blurSigma = parseFloat(sliders.blur.el.value) * 0.1;
+    const cFactor   = parseFloat(sliders.contrast.el.value) * 0.05;
+    const shStrength = parseFloat(sliders.sharpen.el.value) * 0.1;
+
+    applyOp(b => {
+      let img = b;
+      // Apply each adjustment in sequence if non-zero
+      if (bDelta !== 0)      img = brightness(img, bDelta);
+      if (blurSigma > 0)     img = blur(img, blurSigma);
+      if (cFactor !== 0)     img = contrast(img, cFactor);
+      if (shStrength > 0)    img = sharpen(img, shStrength);
+      if (img === b) throw new Error('No adjustments selected — move at least one slider.');
+      return img;
+    });
+  });
+
+  // ── Undo / Redo ────────────────────────────────────────────────────────────
+
+  btnUndo.addEventListener('click', () => {
+    if (undoStack.length === 0) return;
+    redoStack.push(currentBytes);
+    currentBytes = undoStack.pop();
+    displayImage(currentBytes);
+    setStatus('Undone.');
+    syncHistory();
+  });
+
+  btnRedo.addEventListener('click', () => {
+    if (redoStack.length === 0) return;
+    undoStack.push(currentBytes);
+    currentBytes = redoStack.pop();
+    displayImage(currentBytes);
+    setStatus('Redone.');
+    syncHistory();
+  });
+
+  // ── Download ───────────────────────────────────────────────────────────────
+
+  btnDownload.addEventListener('click', () => {
+    if (!currentBytes) return;
+    const blob = new Blob([currentBytes], { type: 'image/png' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'edited.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setStatus('Download started.');
+  });
+
+  // ── Keyboard shortcuts ─────────────────────────────────────────────────────
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault(); btnUndo.click();
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault(); btnRedo.click();
+    }
+  });
+
+  // ── Initialise WASM ────────────────────────────────────────────────────────
+
+  try {
+    await init();
+    setStatus('Ready — open an image to begin.');
+  } catch (e) {
+    setStatus(
+      'Failed to load WASM: ' + e.message +
+      '. Run `wasm-pack build --target web` first.',
+      true
+    );
+  }
+
+  syncHistory();
+</script>
+</body>
+</html>

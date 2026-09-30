@@ -59,3 +59,17 @@
 - [Day 28: Macros](day-28/README.md)
 - [Day 29: Publishing to crates.io](day-29/README.md)
 - [Day 30: Capstone Project](day-30/README.md)
+
+---
+
+# Capstone Solutions
+
+- [Small A — rgrep: recursive grep](capstone/rgrep/README.md)
+- [Small B — passgen: encrypted password vault](capstone/passgen/README.md)
+- [Small C — md-render: Markdown terminal renderer](capstone/md-render/README.md)
+- [Medium A — url-shortener: REST API with SQLite](capstone/url-shortener/README.md)
+- [Medium B — finance-api: personal finance tracker](capstone/finance-api/README.md)
+- [Medium C — chat-server: WebSocket chat](capstone/chat-server/README.md)
+- [Large A — ssg: static site generator](capstone/ssg/README.md)
+- [Large B — kvdb: append-only key-value database](capstone/kvdb/README.md)
+- [Large C — img-wasm: WASM image editor](capstone/img-wasm/README.md)

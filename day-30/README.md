@@ -53,7 +53,7 @@ Choose the scope that fits your time and ambition. All three produce real, usefu
 
 ### Small (2–3 days): Fully-Featured CLI Tool
 
-**Idea A — `rgrep`: A Local grep Replacement**
+**Idea A — `rgrep`: A Local grep Replacement** — [View solution](../capstone/rgrep/README.md)
 
 Build a `grep`-like tool in Rust that searches file contents recursively, with coloured output, regex support, and context lines.
 
@@ -69,7 +69,7 @@ Key features:
 
 You will use: `clap`, `walkdir`, `regex`, closures and iterators (Day 8), file I/O (Day 15), error handling (Day 24).
 
-**Idea B — `passgen`: Command-Line Password Manager**
+**Idea B — `passgen`: Command-Line Password Manager** — [View solution](../capstone/passgen/README.md)
 
 A local, encrypted password vault that stores credentials in an encrypted file.
 
@@ -83,7 +83,7 @@ Key features:
 
 You will use: `clap`, serde (Day 16), file I/O (Day 15), error handling (Day 24), `thiserror`.
 
-**Idea C — `md`: A Markdown Renderer**
+**Idea C — `md`: A Markdown Renderer** — [View solution](../capstone/md-render/README.md)
 
 Render Markdown to styled terminal output using ANSI escape codes.
 
@@ -102,7 +102,7 @@ You will use: `clap`, string processing (Day 14), `pulldown-cmark` for parsing, 
 
 ### Medium (1–2 weeks): Web Service
 
-**Idea A — URL Shortener with SQLite**
+**Idea A — URL Shortener with SQLite** — [View solution](../capstone/url-shortener/README.md)
 
 A self-hosted URL shortener with a REST API and a simple web frontend.
 
@@ -118,7 +118,7 @@ Key features:
 
 You will use: axum (Day 22), sqlx + SQLite (Day 23), error handling (Day 24), tracing (Day 25), `rand` crate.
 
-**Idea B — Personal Finance Tracker API**
+**Idea B — Personal Finance Tracker API** — [View solution](../capstone/finance-api/README.md)
 
 A REST API for tracking income and expenses, with category-based summaries and CSV export.
 
@@ -133,7 +133,7 @@ Key features:
 
 You will use: axum (Day 22), sqlx (Day 23), thiserror + anyhow (Day 24), tracing (Day 25), serde (Day 16).
 
-**Idea C — Chat Server with WebSockets**
+**Idea C — Chat Server with WebSockets** — [View solution](../capstone/chat-server/README.md)
 
 A real-time multi-room chat server using WebSocket connections.
 
@@ -152,7 +152,7 @@ You will use: axum (Day 22) with `axum::extract::ws`, tokio broadcast channels (
 
 ### Large (2–4 weeks): Substantial Project
 
-**Idea A — Static Site Generator**
+**Idea A — Static Site Generator** — [View solution](../capstone/ssg/README.md)
 
 A command-line tool that converts a directory of Markdown files into a complete static website.
 
@@ -169,7 +169,7 @@ Key features:
 
 You will use: `clap`, file I/O, serde, `pulldown-cmark`, `minijinja`/`tera`, axum (for dev server), tracing, criterion (for benchmarking build times).
 
-**Idea B — Minimal Key-Value Database**
+**Idea B — Minimal Key-Value Database** — [View solution](../capstone/kvdb/README.md)
 
 A simple persistent key-value store inspired by bitcask, with a write-ahead log.
 
@@ -184,7 +184,7 @@ Key features:
 
 You will use: file I/O (Day 15), unsafe Rust for performance-critical paths (Day 27), criterion (Day 26), thiserror (Day 24), tracing (Day 25), tokio for the TCP server (Day 21).
 
-**Idea C — WASM-Powered Image Editor**
+**Idea C — WASM-Powered Image Editor** — [View solution](../capstone/img-wasm/README.md)
 
 A browser-based image editor where the image processing logic is compiled to WASM and the UI is plain HTML/JavaScript.
 

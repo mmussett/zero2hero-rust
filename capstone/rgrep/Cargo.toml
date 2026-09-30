@@ -1,0 +1,18 @@
+[package]
+name = "rgrep"
+version = "0.1.0"
+edition = "2021"
+description = "A recursive grep replacement with coloured output and context lines"
+
+[[bin]]
+name = "rgrep"
+path = "src/main.rs"
+
+[dependencies]
+clap        = { version = "4", features = ["derive"] }
+walkdir     = "2"
+regex       = "1"
+colored     = "2"
+ignore      = "0.4"
+thiserror   = "1"
+anyhow      = "1"
