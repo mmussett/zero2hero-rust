@@ -13,6 +13,7 @@ create-missing = false
 [output.html]
 default-theme        = "rust"
 preferred-dark-theme = "coal"
+site-url             = "/zero2hero-rust/"
 git-repository-url   = "https://github.com/mmussett/zero2hero-rust"
 edit-url-template    = "https://github.com/mmussett/zero2hero-rust/edit/main/{path}"
 additional-css       = ["theme/custom.css"]
